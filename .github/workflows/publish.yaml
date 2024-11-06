@@ -1,0 +1,45 @@
+name: Crawlora-App-Publish
+
+on:
+  workflow_call:
+    # inputs:
+    secrets:
+      auth_key:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.0
+        with:
+          lfs: true
+
+      - name: Setup Node.js environment  
+        uses: actions/setup-node@v4.0.4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: corepack enable && npm install
+
+      - name: Install latest Crawlora packages
+        run: |
+          npm i @crawlora/browser@latest
+          npm i @crawlora/sdk@latest
+
+      - name: Build
+        run: npm run build
+      
+      - name: Crawlora App Publish
+        uses: crawlora/crawlora-app-publish-action@main
+        with:
+          working-directory: .
+          auth_key: ${{ secrets.auth_key }}
