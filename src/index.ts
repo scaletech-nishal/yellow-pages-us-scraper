@@ -3,57 +3,65 @@ import { apikey, sequence_id, showBrowser } from "./config";
 import { browser } from "@crawlora/browser";
 
 export default async function ({
-  searches, // data coming from textarea which means it is multiline
+  keywords, // data coming from textarea which means it is multiline
 }: {
-  searches: string;
+  keywords: string;
 }) {
+  const formedData = keywords
+    .trim()
+    .split("\n")
+    .map((v) => v.trim());
 
-  const formedData = searches.trim().split("\n").map(v => v.trim())
+  await browser(
+    async ({ page, wait, output, debug }) => {
+      for await (const searchs of formedData) {
+        await page.goto("https://www.yellowpages.com/");
+        const queryAndLocations = searchs.split(";");
+        await page.type('input[id="query"]', queryAndLocations[0]);
 
- await browser(async ({page, wait, output, debug }) => {
+        //clear the default value
+        await page.focus('input[id="location"]');
+        await page.keyboard.down("Control"); // Hold down Control
+        await page.keyboard.press("A"); // Press A to select all text
+        await page.keyboard.up("Control"); // Release Control
+        await page.keyboard.press("Backspace"); // Clear it
+        await page.type('input[id="location"]', queryAndLocations[1]);
 
-    for await (const searchs of formedData) {
+        //click Find Button
+        await page.click('button[type="submit"][value="Find"]');
 
-      await page.goto("https://google.com");
+        await page.waitForNavigation({ waitUntil: ["networkidle2"] });
 
-      debug(`visiting google website`)
-  
-      await wait(2);
-  
-      await page.type('textarea[name="q"]', searchs);
+        const data = await page.evaluate(() => {
+          const results: any[] = [];
+          const listings = document.querySelectorAll(".result");
 
-      debug(`looking for textarea to type`)
+          listings.forEach((listing) => {
+            const title =
+              (listing.querySelector(".n a") as HTMLElement)?.innerText ||
+              "N/A";
+            const address =
+              (listing.querySelector(".street-address") as HTMLElement)
+                ?.innerText || "N/A";
+            const phone =
+              (listing.querySelector(".phones.phone.primary") as HTMLElement)
+                ?.innerText || "N/A";
 
-  
-      await page.keyboard.press("Enter");
+            const categories = Array.from(
+              listing.querySelectorAll(".categories a")
+            )
+              .map((cat) => (cat as HTMLElement).innerText)
+              .join(", ");
+            results.push({ title, address, phone, categories });
+          });
 
-      debug(`pressing enter`)
+          return results;
+        });
 
-  
-      await page.waitForNavigation({ waitUntil: ["networkidle2"] });
-
-      debug(`waiting for page navigation`)
-
-  
-      const links = await page.$$eval("a", (anchors) =>
-        anchors.map((anchor) => anchor.href)
-      );
-
-      debug(`fetching links`)
-
-
-      await wait(2);
-
-      debug(`started submitting links`)
-
-      await Promise.all(links.map(async (link) => {
-        await output.create({sequence_id, sequence_output: { [searchs]: link }}) // save data per line
-      }))
-      
-      debug(`submitted links`)
-
-    }
-
-  }, { showBrowser, apikey })
-
+        console.log(data);
+        await wait(50);
+      }
+    },
+    { showBrowser, apikey }
+  );
 }

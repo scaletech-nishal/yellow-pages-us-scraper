@@ -1,3 +1,5 @@
-import GetGoogleLinks from "./index";
+import GetData from "./index";
 
-GetGoogleLinks({ searches: `crawlora\nscaletech` });
+GetData({ keywords: `Bank;New york city` }); 
+
+// GetData({ keywords: `Bank;New york city\nHotels;New york city` }); 

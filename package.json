@@ -4,9 +4,9 @@
   "main": ".dist/index.js",
   "module": "CommanJs",
   "engines": {
-        "node": "^22",
-        "npm": "^10"
-    },
+    "node": "^22",
+    "npm": "^10"
+  },
   "scripts": {
     "preinstall": "npx only-allow npm",
     "build": "tsc",
@@ -23,6 +23,6 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@crawlora/browser": "latest"
+    "@crawlora/browser": "^1.0.6"
   }
 }
