@@ -1,12 +1,23 @@
 [
-    {
-        "type": "textarea",
-        "datatype": "string",
-        "placeholder": "Enter search keywords per line",
-        "default": "crawlora",
-        "label": "Google searchs",
-        "regex": "/^.*$/",
-        "required": true,
-        "name": "searches"
-      }
+  {
+    "type": "textarea",
+    "datatype": "string",
+    "placeholder": "Enter keywords and location per line like \n Hotel;New York City \n Bank;New York City",
+    "default": "",
+    "label": "keyword-location",
+    "regex": "/^.*$/",
+    "required": true,
+    "name": "keyword"
+  },
+
+  {
+    "type": "textarea",
+    "datatype": "number",
+    "placeholder": "Enter number of pages (e.g. 2)",
+    "default": "1",
+    "label": "Page-number",
+    "regex": "/^.*$/",
+    "required": true,
+    "name": "maxPages"
+  }
 ]

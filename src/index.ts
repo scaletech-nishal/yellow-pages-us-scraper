@@ -1,66 +1,96 @@
 import { apikey, sequence_id, showBrowser } from "./config";
-
 import { browser } from "@crawlora/browser";
 
 export default async function ({
-  keywords, // data coming from textarea which means it is multiline
+  query,
+  maxPages = 1, // Maximum number of pages to scrape
 }: {
-  keywords: string;
+  query: string;
+  maxPages?: number;
 }) {
-  const formedData = keywords
+  const formedData = query
     .trim()
     .split("\n")
     .map((v) => v.trim());
 
   await browser(
     async ({ page, wait, output, debug }) => {
-      for await (const searchs of formedData) {
-        await page.goto("https://www.yellowpages.com/");
-        const queryAndLocations = searchs.split(";");
-        await page.type('input[id="query"]', queryAndLocations[0]);
+      for await (const search of formedData) {
+        const [keyword, location] = search.split(";");
 
-        //clear the default value
-        await page.focus('input[id="location"]');
-        await page.keyboard.down("Control"); // Hold down Control
-        await page.keyboard.press("A"); // Press A to select all text
-        await page.keyboard.up("Control"); // Release Control
-        await page.keyboard.press("Backspace"); // Clear it
-        await page.type('input[id="location"]', queryAndLocations[1]);
+        debug(`Searching for: ${keyword} in ${location}`);
 
-        //click Find Button
-        await page.click('button[type="submit"][value="Find"]');
+        // Loop through each page up to maxPages
+        for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+          const url = `https://www.yellowpages.com/search?search_terms=${encodeURIComponent(
+            keyword
+          )}&geo_location_terms=${encodeURIComponent(
+            location
+          )}&page=${pageNum}`;
+          debug(`Navigating to: ${url}`);
+          await page.goto(url, { waitUntil: "networkidle2" });
 
-        await page.waitForNavigation({ waitUntil: ["networkidle2"] });
+          // Scrape data from the current page
+          const data = await page.evaluate(
+            (keyword, location) => {
+              const results: any[] = [];
+              const listings = document.querySelectorAll(".result");
 
-        const data = await page.evaluate(() => {
-          const results: any[] = [];
-          const listings = document.querySelectorAll(".result");
+              listings.forEach((listing) => {
+                const title =
+                  (listing.querySelector(".n a") as HTMLElement)?.innerText ||
+                  "N/A";
+                const address =
+                  (listing.querySelector(".street-address") as HTMLElement)
+                    ?.innerText || "N/A";
+                const phone =
+                  (
+                    listing.querySelector(
+                      ".phones.phone.primary"
+                    ) as HTMLElement
+                  )?.innerText || "N/A";
+                const website =
+                  (
+                    listing.querySelector(
+                      ".track-visit-website"
+                    ) as HTMLAnchorElement
+                  )?.getAttribute("href") || "N/A";
+                const categories = Array.from(
+                  listing.querySelectorAll(".categories a")
+                )
+                  .map((cat) => (cat as HTMLElement).innerText)
+                  .join(", ");
 
-          listings.forEach((listing) => {
-            const title =
-              (listing.querySelector(".n a") as HTMLElement)?.innerText ||
-              "N/A";
-            const address =
-              (listing.querySelector(".street-address") as HTMLElement)
-                ?.innerText || "N/A";
-            const phone =
-              (listing.querySelector(".phones.phone.primary") as HTMLElement)
-                ?.innerText || "N/A";
+                results.push({
+                  title,
+                  address,
+                  phone,
+                  website,
+                  categories,
+                  keywords: keyword,
+                  location: location,
+                });
+              });
 
-            const categories = Array.from(
-              listing.querySelectorAll(".categories a")
-            )
-              .map((cat) => (cat as HTMLElement).innerText)
-              .join(", ");
-            results.push({ title, address, phone, categories });
-          });
+              return results;
+            },
+            keyword,
+            location
+          );
 
-          return results;
-        });
-
-        console.log(data);
-        await wait(50);
+          // to store the data via output
+          await Promise.all(
+            data.map(async (result) => {
+              await output.create({
+                sequence_id,
+                sequence_output: { ...result },
+              });
+            })
+          );
+        }
       }
+
+      await wait(3); // Add a delay to avoid rate limiting
     },
     { showBrowser, apikey }
   );
