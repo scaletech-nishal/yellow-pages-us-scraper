@@ -17,5 +17,6 @@
   "short_description": "Get basic detail from yellow pages results with paginations.",
   "version": "1.0.0",
   "documentation_file": "./documentation.md",
-  "input_file": "./input.json"
+  "input_file": "./input.json",
+  "app_id": "2d948638-b47b-41ba-904f-879a55f8a74a"
 }
