@@ -4,18 +4,18 @@
     "datatype": "string",
     "placeholder": "Enter keywords and location per line like \n Hotel;New York City \n Bank;New York City",
     "default": "",
-    "label": "keyword-location",
+    "label": "Keyword Location",
     "regex": "/^.*$/",
     "required": true,
     "name": "keyword"
   },
 
   {
-    "type": "textarea",
+    "type": "input",
     "datatype": "number",
     "placeholder": "Enter number of pages (e.g. 2)",
     "default": "1",
-    "label": "Page-number",
+    "label": "Page Number",
     "regex": "/^.*$/",
     "required": true,
     "name": "maxPages"
