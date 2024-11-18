@@ -16,7 +16,7 @@
     "placeholder": "Enter number of pages (e.g. 2)",
     "default": "1",
     "label": "Page Number",
-    "regex": "/^.*$/",
+    "regex": "/^\\d+$/",
     "required": true,
     "name": "maxPages"
   }
